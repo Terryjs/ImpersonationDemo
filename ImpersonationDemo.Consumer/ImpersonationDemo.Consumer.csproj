@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ImpersonationDemo</RootNamespace>
+    <AssemblyName>ImpersonationDemo.Consumer</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ImpersonationDemo.Abstractions\ImpersonationDemo.Abstractions.csproj" />
+  </ItemGroup>
+
+  <Target Name="CopyWindowsImplementation" AfterTargets="Build">
+    <Copy
+      SourceFiles="$(SolutionDir)ImpersonationDemo.Windows\bin\$(Configuration)\net48\ImpersonationDemo.Windows.dll"
+      DestinationFolder="$(TargetDir)"
+      Condition="Exists('$(SolutionDir)ImpersonationDemo.Windows\bin\$(Configuration)\net48\ImpersonationDemo.Windows.dll')" />
+  </Target>
+</Project>
