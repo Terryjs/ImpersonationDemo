@@ -45,10 +45,10 @@ namespace ImpersonationDemo
 
         private sealed class ImpersonationScope : IDisposable
         {
-            private readonly WindowsImpersonationContext _context;
+            private readonly object _context;
             private readonly IntPtr _tokenHandle;
 
-            public ImpersonationScope(WindowsImpersonationContext context, IntPtr tokenHandle)
+            public ImpersonationScope(object context, IntPtr tokenHandle)
             {
                 _context = context;
                 _tokenHandle = tokenHandle;
@@ -58,8 +58,9 @@ namespace ImpersonationDemo
             {
                 try
                 {
-                    _context?.Undo();
+                    _context?.GetType().GetMethod("Undo")?.Invoke(_context, null);
                 }
+                catch { }
                 finally
                 {
                     if (_tokenHandle != IntPtr.Zero)
