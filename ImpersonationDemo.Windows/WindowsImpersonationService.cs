@@ -32,35 +32,54 @@ namespace ImpersonationDemo
             var identity = new WindowsIdentity(tokenHandle);
             var context = identity.Impersonate();
 
-            return new ImpersonationScope(context, tokenHandle);
+            return new ImpersonationScope(tokenHandle, context);
         }
 
         public T RunAs<T>(string domain, string username, string password, Func<T> action)
         {
-            using (Impersonate(domain, username, password))
+            IntPtr tokenHandle;
+
+            if (!LogonUser(username, domain, password, 2, 0, out tokenHandle))
             {
-                return action();
+                throw new Win32Exception(Marshal.GetLastWin32Error(),
+                    $"LogonUser failed for '{username}'.");
+            }
+
+            var identity = new WindowsIdentity(tokenHandle);
+
+            try
+            {
+                using (var context = identity.Impersonate())
+                {
+                    return action();
+                }
+            }
+            finally
+            {
+                if (tokenHandle != IntPtr.Zero)
+                {
+                    CloseHandle(tokenHandle);
+                }
             }
         }
 
         private sealed class ImpersonationScope : IDisposable
         {
-            private readonly object _context;
             private readonly IntPtr _tokenHandle;
+            private readonly IDisposable _context;
 
-            public ImpersonationScope(object context, IntPtr tokenHandle)
+            public ImpersonationScope(IntPtr tokenHandle, IDisposable context)
             {
-                _context = context;
                 _tokenHandle = tokenHandle;
+                _context = context;
             }
 
             public void Dispose()
             {
                 try
                 {
-                    _context?.GetType().GetMethod("Undo")?.Invoke(_context, null);
+                    _context?.Dispose();
                 }
-                catch { }
                 finally
                 {
                     if (_tokenHandle != IntPtr.Zero)
